@@ -1,19 +1,24 @@
 const express = require('express');
 const WebSocket = require('ws');
 const https = require('https');
+const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const { URL } = require('url');
-const fs = require('fs');
 
-// Создаем приложение Express
 const app = express();
 
-// Настраиваем порты и сертификаты
-const port = process.env.PORT || 443;
+const port = process.env.PORT || 10000; // Порт для HTTPS сервера
+const httpPort = 80; // Порт для HTTP сервера
 
-// Создаем HTTPS сервер с встроенными сертификатами Render
-const server = https.createServer(app);
+// Создаем HTTPS сервер
+const httpsServer = https.createServer(app);
+
+// Создаем HTTP сервер для перенаправления на HTTPS
+const httpServer = http.createServer((req, res) => {
+    res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
+    res.end();
+});
 
 // Создаем WebSocket сервер, связанный с HTTPS сервером
 const wss = new WebSocket.Server({ noServer: true });
@@ -105,13 +110,17 @@ const broadcastUserList = () => {
 };
 
 // Обработка upgrade запросов для WebSocket
-server.on('upgrade', (request, socket, head) => {
+httpsServer.on('upgrade', (request, socket, head) => {
     wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit('connection', ws, request);
     });
 });
 
-// Запуск сервера
-server.listen(port, '0.0.0.0', () => {
-    console.log(`Server is running on https://localhost:${port}`);
+// Запуск серверов
+httpServer.listen(httpPort, '0.0.0.0', () => {
+    console.log(`HTTP server is running on http://localhost:${httpPort}`);
+});
+
+httpsServer.listen(port, '0.0.0.0', () => {
+    console.log(`HTTPS server is running on https://localhost:${port}`);
 });
