@@ -37,14 +37,13 @@ app.post('/register', (req, res) => {
         return res.status(400).json({ message: 'Username already taken.' });
     }
 
-    users.set(username, null); // Устанавливаем пользователя, пока нет подключения WebSocket
-    console.log(users);
+    users.set(username, null);
     res.status(200).json({ message: 'User registered successfully.' });
 });
 
 // Обработка подключений WebSocket
 wss.on('connection', (ws, req) => {
-    const url = new URL(req.url, `http://${req.headers.host}`); // Используем HTTP, т.к. Render предоставляет HTTPS
+    const url = new URL(req.url, `https://${req.headers.host}`);
     const username = url.searchParams.get('username');
 
     if (!username) {
