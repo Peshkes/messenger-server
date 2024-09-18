@@ -1,19 +1,18 @@
 const express = require('express');
 const WebSocket = require('ws');
-const https = require('https'); // Заменяем http на https
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs'); // Модуль для работы с файловой системой
 
 const app = express();
+const port = process.env.PORT || 10000; // Render задает порт через переменную окружения
 
-// Создаем HTTPS сервер
-const server = https.createServer({}, app);
+// Создаем HTTP-сервер
+const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on port ${port}`);
+});
 
-// Настраиваем WebSocket сервер поверх HTTPS
+// Настраиваем WebSocket сервер поверх HTTP
 const wss = new WebSocket.Server({ server });
-
-const port = process.env.PORT || 443; // Порт 443 по умолчанию для HTTPS
 
 const users = new Map();
 
@@ -37,13 +36,15 @@ app.post('/register', (req, res) => {
     if (users.has(username)) {
         return res.status(400).json({ message: 'Username already taken.' });
     }
+
+    users.set(username, null); // Устанавливаем пользователя, пока нет подключения WebSocket
     console.log(users);
     res.status(200).json({ message: 'User registered successfully.' });
 });
 
 // Обработка подключений WebSocket
 wss.on('connection', (ws, req) => {
-    const url = new URL(req.url, `https://${req.headers.host}`);
+    const url = new URL(req.url, `http://${req.headers.host}`); // Используем HTTP, т.к. Render предоставляет HTTPS
     const username = url.searchParams.get('username');
 
     if (!username) {
@@ -51,7 +52,7 @@ wss.on('connection', (ws, req) => {
         return;
     }
 
-    if (users.has(username)) {
+    if (users.has(username) && users.get(username)) {
         ws.close(4001, 'Username already connected.');
         return;
     }
@@ -95,8 +96,3 @@ const broadcastUserList = () => {
         }
     });
 };
-
-// Запуск сервера
-server.listen(port, () => {
-    console.log(`Server is running on https://localhost:${port}`);
-});
