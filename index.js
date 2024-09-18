@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 10000; // Render задает порт через переменную окружения
+const port = 443;
 
 // Создаем HTTP-сервер
 const server = app.listen(port, '0.0.0.0', () => {
