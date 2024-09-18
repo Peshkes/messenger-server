@@ -1,18 +1,18 @@
 const express = require('express');
 const WebSocket = require('ws');
+const https = require('https');
 const cors = require('cors');
 const path = require('path');
+const { URL } = require('url');
 
 const app = express();
-const port = 443;
 
-// Создаем HTTP-сервер
-const server = app.listen(port, '0.0.0.0', () => {
-    console.log(`Server is running on port ${port}`);
-});
+// Создаем HTTPS сервер (без явной конфигурации сертификатов)
+const server = https.createServer(app);
 
-// Настраиваем WebSocket сервер поверх HTTP
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ noServer: true }); // Создаем WebSocket сервер с noServer: true
+
+const port = process.env.PORT || 443; // Используем порт 443 для HTTPS
 
 const users = new Map();
 
@@ -82,6 +82,10 @@ wss.on('connection', (ws, req) => {
         users.delete(username);
         broadcastUserList();
     });
+
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
 });
 
 // Функция для отправки списка пользователей
@@ -95,3 +99,15 @@ const broadcastUserList = () => {
         }
     });
 };
+
+// Обработка upgrade запросов для WebSocket
+server.on('upgrade', (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+    });
+});
+
+// Запуск сервера
+server.listen(port, () => {
+    console.log(`Server is running on https://localhost:${port}`);
+});
