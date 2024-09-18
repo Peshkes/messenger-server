@@ -5,8 +5,8 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const index = http.createServer(app);
+const wss = new WebSocket.Server({ server: index });
 
 const port = 3000;
 
@@ -88,6 +88,6 @@ const broadcastUserList = () => {
     });
 };
 
-server.listen(port, () => {
+index.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
