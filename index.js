@@ -36,7 +36,7 @@ app.post('/register', (req, res) => {
 });
 
 wss.on('connection', (ws, req) => {
-    const url = new URL(req.url, `http://${req.headers.host}`);
+    const url = new URL(req.url, `https://${req.headers.host}`);
     const username = url.searchParams.get('username');
 
     if (!username) {
@@ -89,5 +89,5 @@ const broadcastUserList = () => {
 };
 
 index.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Server is running on https://localhost:${port}`);
 });
