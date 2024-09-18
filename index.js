@@ -1,20 +1,26 @@
 const express = require('express');
 const WebSocket = require('ws');
-const http = require('http');
+const https = require('https'); // Заменяем http на https
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs'); // Модуль для работы с файловой системой
 
 const app = express();
-const index = http.createServer(app);
-const wss = new WebSocket.Server({ server: index });
 
-const port = 3000;
+// Создаем HTTPS сервер
+const server = https.createServer({}, app);
+
+// Настраиваем WebSocket сервер поверх HTTPS
+const wss = new WebSocket.Server({ server });
+
+const port = process.env.PORT || 443; // Порт 443 по умолчанию для HTTPS
 
 const users = new Map();
 
 app.use(cors());
 app.use(express.json());
 
+// Статические файлы для фронтенда
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (req, res) => {
@@ -35,6 +41,7 @@ app.post('/register', (req, res) => {
     res.status(200).json({ message: 'User registered successfully.' });
 });
 
+// Обработка подключений WebSocket
 wss.on('connection', (ws, req) => {
     const url = new URL(req.url, `https://${req.headers.host}`);
     const username = url.searchParams.get('username');
@@ -77,6 +84,7 @@ wss.on('connection', (ws, req) => {
     });
 });
 
+// Функция для отправки списка пользователей
 const broadcastUserList = () => {
     const userList = Array.from(users.keys());
     const message = JSON.stringify({ type: 'USER_LIST', users: userList });
@@ -88,6 +96,7 @@ const broadcastUserList = () => {
     });
 };
 
-index.listen(port, () => {
+// Запуск сервера
+server.listen(port, () => {
     console.log(`Server is running on https://localhost:${port}`);
 });
