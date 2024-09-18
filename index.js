@@ -1,27 +1,16 @@
 const express = require('express');
-const WebSocket = require('ws');
-const https = require('https');
 const http = require('http');
-const cors = require('cors');
+const WebSocket = require('ws');
 const path = require('path');
-const { URL } = require('url');
+const cors = require('cors');
 
 const app = express();
+const port = process.env.PORT || 10000; // Порт, на котором будет работать сервер
 
-const port = process.env.PORT || 10000; // Порт для HTTPS сервера
-const httpPort = 80; // Порт для HTTP сервера
+const server = http.createServer(app);
 
-// Создаем HTTPS сервер
-const httpsServer = https.createServer(app);
-
-// Создаем HTTP сервер для перенаправления на HTTPS
-const httpServer = http.createServer((req, res) => {
-    res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
-    res.end();
-});
-
-// Создаем WebSocket сервер, связанный с HTTPS сервером
-const wss = new WebSocket.Server({ noServer: true });
+// Создаем WebSocket сервер, который будет использовать тот же HTTP сервер
+const wss = new WebSocket.Server({ server });
 
 const users = new Map();
 
@@ -52,7 +41,7 @@ app.post('/register', (req, res) => {
 
 // Обработка подключений WebSocket
 wss.on('connection', (ws, req) => {
-    const url = new URL(req.url, `https://${req.headers.host}`);
+    const url = new URL(req.url, `http://${req.headers.host}`);
     const username = url.searchParams.get('username');
 
     if (!username) {
@@ -109,18 +98,7 @@ const broadcastUserList = () => {
     });
 };
 
-// Обработка upgrade запросов для WebSocket
-httpsServer.on('upgrade', (request, socket, head) => {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, request);
-    });
-});
-
-// Запуск серверов
-httpServer.listen(httpPort, '0.0.0.0', () => {
-    console.log(`HTTP server is running on http://localhost:${httpPort}`);
-});
-
-httpsServer.listen(port, '0.0.0.0', () => {
-    console.log(`HTTPS server is running on https://localhost:${port}`);
+// Запуск сервера
+server.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on http://localhost:${port}`);
 });
