@@ -4,15 +4,19 @@ const https = require('https');
 const cors = require('cors');
 const path = require('path');
 const { URL } = require('url');
+const fs = require('fs');
 
+// Создаем приложение Express
 const app = express();
 
-// Создаем HTTPS сервер (без явной конфигурации сертификатов)
+// Настраиваем порты и сертификаты
+const port = process.env.PORT || 443;
+
+// Создаем HTTPS сервер с встроенными сертификатами Render
 const server = https.createServer(app);
 
-const wss = new WebSocket.Server({ noServer: true }); // Создаем WebSocket сервер с noServer: true
-
-const port = process.env.PORT || 443; // Используем порт 443 для HTTPS
+// Создаем WebSocket сервер, связанный с HTTPS сервером
+const wss = new WebSocket.Server({ noServer: true });
 
 const users = new Map();
 
@@ -108,6 +112,6 @@ server.on('upgrade', (request, socket, head) => {
 });
 
 // Запуск сервера
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on https://localhost:${port}`);
 });
